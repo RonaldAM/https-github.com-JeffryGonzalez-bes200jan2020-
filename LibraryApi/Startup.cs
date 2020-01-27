@@ -16,6 +16,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.IO;
+using LibraryApi.Mappers;
+using AutoMapper;
 
 namespace LibraryApi
 {
@@ -41,6 +43,9 @@ namespace LibraryApi
             services.AddDbContext<LibraryDataContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("LibraryDatabase"))
             );
+
+            services.AddScoped<IMapBooks, EfBookMapper>();
+            services.AddAutoMapper(typeof(Startup));
 
             services.AddSwaggerGen(c =>
             {

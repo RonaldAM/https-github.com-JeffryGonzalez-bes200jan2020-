@@ -7,18 +7,22 @@ using System.Threading.Tasks;
 using LibraryApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
+using LibraryApi.Mappers;
+using LibraryApi.Services;
 
 namespace LibraryApi.Controllers
 {
     public class BooksController : Controller
     {
         LibraryDataContext Context;
+        IMapBooks BooksMapper;
 
-        public BooksController(LibraryDataContext context)
+        public BooksController(LibraryDataContext context, IMapBooks booksMapper)
         {
-            Context = context; 
-            
+            Context = context;
+            BooksMapper = booksMapper;
         }
+
 
         /// <summary>
         /// Gives you all the books that are currently in inventory
@@ -33,30 +37,20 @@ namespace LibraryApi.Controllers
         [HttpPut("/books/{id:int}/genre")]
         public async Task<IActionResult> UpdateTheGenre(int id, [FromBody] string genre)
         {
-            var book = await GetBooksInInventory().SingleOrDefaultAsync(b => b.Id == id);
-            if (book == null)
+            bool madeChange = await BooksMapper.UpdateGenreFor(id, genre);
+            if(madeChange)
+            {
+                return NoContent();
+            } else
             {
                 return NotFound();
-            }
-            else
-            {
-                book.Genre = genre;
-                await Context.SaveChangesAsync();
-
-                return NoContent();
             }
         }
 
         [HttpDelete("/books/{id:int}")]
         public async Task<IActionResult> RemoveBookFromInventory(int id)
         {
-            var book = await GetBooksInInventory().SingleOrDefaultAsync(b => b.Id == id);
-            if(book != null)
-            {
-                book.InInventory = false;
-                await Context.SaveChangesAsync();
-            }
-
+            await BooksMapper.Remove(id);
             return NoContent();
         }
 
@@ -68,69 +62,20 @@ namespace LibraryApi.Controllers
         /// <returns></returns>
         [HttpPost("/books")]
         [Produces("application/json")]
+        [ValidateModel]
         public async Task<ActionResult<GetBookDetailsResponse>> AddABook([FromBody] PostBooksRequest bookToAdd)
         {
-            // Validate it. (if valid, return a 400 Bad Request)
-            if(!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            // Add it to the domain.
-            //  - PostBooksRequest -> Book
-            var book = new Book
-            {
-                Title = bookToAdd.Title,
-                Author = bookToAdd.Author,
-                Genre = bookToAdd.Genre,
-                NumberOfPages = bookToAdd.NumberOfPages,
-                InInventory = true
-            }; 
-
-            //  - Add it to the Context.
-            Context.Books.Add(book);
-            //  - Have the context save everything.
-            await Context.SaveChangesAsync();
-            // Return a 201 Created Status Code.
-            //  - Add a location header on the response e.g. Location: http://server/books/8
-            //  - Add the entity
-            //  - Book -> Get BooksDetailResponse
-            
-            var response = new GetBookDetailsResponse
-            {
-                Id = book.Id,
-                Title = book.Title,
-                Author = book.Author,
-                Genre = book.Genre,
-                NumberOfPages = book.NumberOfPages
-            };
-
+            GetBookDetailsResponse response = await BooksMapper.Add(bookToAdd);
             return CreatedAtRoute("books#getbookbyid", new { id = response.Id }, response);
         }
 
 
         [HttpGet("/books/{id:int}", Name = "books#getbookbyid")]
-        public async Task<IActionResult> GetBookById(int id)
+        public async Task<ActionResult<GetBookDetailsResponse>> GetBookById(int id)
         {
-            var response = await GetBooksInInventory()
-                .Where(b => b.Id == id)
-                .Select(b => new GetBookDetailsResponse
-                {
-                    Id = b.Id,
-                    Title = b.Title,
-                    Author = b.Author,
-                    Genre = b.Genre,
-                    NumberOfPages = b.NumberOfPages
-                }).SingleOrDefaultAsync();
+            var response = await BooksMapper.GetBookById(id);
 
-            if (response == null)
-            {
-                return NotFound("No book with that Id!"); // the string is optional
-            }
-            else
-            {
-                return Ok(response);
-            }
-
+            return this.Maybe(response);
         }
 
         /// <summary>
@@ -143,29 +88,7 @@ namespace LibraryApi.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<GetBooksResponse>> GetAllBooks([FromQuery] string genre = "all")
         {
-
-            var books = GetBooksInInventory();
-
-            if (genre != "all")
-            {
-                books = books.Where(b => b.Genre == genre);
-            }
-
-            var booksListItems = await books.Select(b => new BookSummaryItem
-            {
-                Id = b.Id,
-                Title = b.Title,
-                Author = b.Author,
-                Genre = b.Genre
-            }).ToListAsync();
-
-            var response = new GetBooksResponse
-            {
-                Data = booksListItems,
-                Genre = genre,
-                Count = booksListItems.Count()
-            };
-
+            GetBooksResponse response = await BooksMapper.GetBooks(genre);
             return Ok(response); // for right now.
         }
     }
