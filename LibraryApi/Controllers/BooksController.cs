@@ -14,24 +14,12 @@ namespace LibraryApi.Controllers
 {
     public class BooksController : Controller
     {
-        LibraryDataContext Context;
+
         IMapBooks BooksMapper;
 
-        public BooksController(LibraryDataContext context, IMapBooks booksMapper)
+        public BooksController(IMapBooks booksMapper)
         {
-            Context = context;
             BooksMapper = booksMapper;
-        }
-
-
-        /// <summary>
-        /// Gives you all the books that are currently in inventory
-        /// </summary>
-        /// <returns>uh, those books</returns>
-        IQueryable<Book> GetBooksInInventory()
-        {
-            return Context.Books
-                .Where(b => b.InInventory);
         }
 
         [HttpPut("/books/{id:int}/genre")]
