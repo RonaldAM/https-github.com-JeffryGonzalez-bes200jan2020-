@@ -18,6 +18,8 @@ using System.Reflection;
 using System.IO;
 using LibraryApi.Mappers;
 using AutoMapper;
+using System.Text.Json.Serialization;
+using RabbitMqUtils;
 
 namespace LibraryApi
 {
@@ -33,10 +35,15 @@ namespace LibraryApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+
+            services.AddRabbit(Configuration);
             services.AddControllers()
                 .AddJsonOptions(options =>
-                    // think more about this before you put this in production...
-                    options.JsonSerializerOptions.Converters.Add(new StringToIntConverter())
+                    {
+                        // think more about this before you put this in production...
+                        options.JsonSerializerOptions.Converters.Add(new StringToIntConverter());
+                        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                    }
                 );
             services.AddTransient<IGenerateEnrollmentIds, EnrollmentIdGenerator>();
 
@@ -45,6 +52,7 @@ namespace LibraryApi
             );
 
             services.AddScoped<IMapBooks, EfBookMapper>();
+            services.AddScoped<ISendMessagesToTheReservationProcessor, RabbitMqReservationProcessor>();
             services.AddAutoMapper(typeof(Startup));
 
             services.AddSwaggerGen(c =>
