@@ -71,6 +71,8 @@ namespace LibraryApi
             {
                 options.Configuration = Configuration.GetValue<string>("redisHost");
             });
+
+            services.AddCors();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -81,7 +83,12 @@ namespace LibraryApi
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseCors();
+            app.UseCors(options =>
+            {
+                options.AllowAnyOrigin();
+                options.AllowAnyMethod();
+                options.AllowAnyHeader();
+            });
             app.UseSwagger();
 
             app.UseSwaggerUI(c =>
@@ -101,6 +108,8 @@ namespace LibraryApi
             {
                 endpoints.MapControllers();
             });
+
+          
         }
     }
 }

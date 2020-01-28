@@ -46,5 +46,18 @@ namespace LibraryApi.Controllers
 
             return Ok($"It is now {newTime}");
         }
+
+        [HttpGet("/serverstatus")]
+        [ResponseCache(Duration =15, Location = ResponseCacheLocation.Any)]
+        public ActionResult<CachedStatus> GetServerStatus()
+        {
+            return Ok(new CachedStatus { Status = "All good.", CheckedAt = DateTime.Now });
+        }
+    }
+
+    public class CachedStatus
+    {
+        public string Status { get; set; }
+        public DateTime CheckedAt { get; set; }
     }
 }

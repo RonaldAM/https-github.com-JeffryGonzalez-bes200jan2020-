@@ -73,6 +73,7 @@ namespace LibraryApi.Controllers
         /// <returns>A List of Books</returns>
         /// <response code="200">Returns all of your books.</response>
         [HttpGet("/books")]
+        [ResponseCache(Duration =10, Location = ResponseCacheLocation.Any)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<GetBooksResponse>> GetAllBooks([FromQuery] string genre = "all")
         {
