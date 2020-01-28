@@ -73,6 +73,7 @@ namespace LibraryApi
             });
 
             services.AddCors();
+            services.AddResponseCaching();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -109,6 +110,7 @@ namespace LibraryApi
                 endpoints.MapControllers();
             });
 
+            app.UseResponseCaching(); // probably think about this long and hard before you do it.
           
         }
     }
