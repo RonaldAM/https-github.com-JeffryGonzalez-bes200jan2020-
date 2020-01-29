@@ -1,0 +1,38 @@
+version: "3.7"
+services:
+    api:
+        image: jeffgonzalez/libraryapi
+        ports:
+            - "5000:80"
+        environment: 
+            - Rabbit:HostName=rabbit
+            - Rabbit:Port=5672
+            - Rabbit:UserName=guest
+            - Rabbit:Password=guest
+            - Rabbit:VHost=/
+            - ConnectionStrings__LibraryDatabase=server=sql;database=library;user id=SA;password=Tokyo!_Joe138
+            - redisHost=redis
+        networks:
+            - my-network
+    sql:
+        image: jeffgonzalez/librarysql
+        ports:
+            - "1433:1433"
+        networks:
+            - my-network
+    redis:
+        image: redis:alpine3.11
+        ports:
+            - "6379:6379"
+        networks:
+            - my-network
+    rabbit:
+        image: rabbitmq:management
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        networks:
+            - my-network
+networks:
+    my-network:
+        driver: bridge
